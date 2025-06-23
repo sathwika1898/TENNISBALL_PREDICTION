@@ -19,7 +19,7 @@ court_width_m = 8.23
 court_length_m = 23.77
 
 # Directory with uploaded minimaps (jpeg files)
-input_dir = "./minimaps"  # Replace with your folder path
+input_dir = "./MiniMap"  # Replace with your folder path
 image_files = sorted([f for f in os.listdir(input_dir) if f.endswith(".jpeg")])
 
 # Initialize output list
