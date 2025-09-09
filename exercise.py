@@ -1,7 +1,9 @@
 import os
 import cv2
+import re
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 # Create output folder
 os.makedirs("excel", exist_ok=True)
@@ -21,28 +23,37 @@ court_length_m = 23.77
 # Folders to process
 folders = ["MiniMap", "Output"]
 
-# Initialize data and rally count
+# Initialize data
 all_data = []
-rally_counter = 1
+
+# Helper function to extract rally number
+def extract_rally_number(rally_id):
+    match = re.search(r'\d+', rally_id)
+    return int(match.group()) if match else 99999  # non-matching go to end
 
 for folder in folders:
     input_dir = f"./{folder}"
     image_files = sorted([f for f in os.listdir(input_dir) if f.endswith(".jpeg")])
 
-    for idx in range(0, len(image_files), 2):
-        rally_id = f"R{rally_counter}"
-        rally_counter += 1
+    # Group files by rally ID (everything before first "_")
+    rallies = defaultdict(list)
+    for f in image_files:
+        rally_id = f.split("_")[0]  # e.g., "R10" or "Rally10"
+        rallies[rally_id].append(f)
 
-        pair = image_files[idx:idx+2]
-        if len(pair) < 2:
-            continue
+    # Process each rally
+    for rally_id, files in sorted(rallies.items(), key=lambda x: extract_rally_number(x[0])):
+        rally_num = extract_rally_number(rally_id)
+        if rally_num == 99999:
+            print(f"⚠️ Warning: Rally ID not numeric -> {rally_id}")
 
-        for frame_id, image_name in enumerate(pair, start=1):
+        for frame_id, image_name in enumerate(files, start=1):
             source = "shot_placement" if "placement" in image_name else "hitting_position"
             image_path = os.path.join(input_dir, image_name)
             image = cv2.imread(image_path)
 
             if image is None:
+                print(f"⚠️ Skipped unreadable image: {image_name}")
                 continue
 
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -77,7 +88,8 @@ for folder in folders:
 df = pd.DataFrame(all_data)
 
 # Save to Excel
-output_path = "excel/time_series_shot_data_all_new.xlsx"
+output_path = "excel/time_series_shot_data_all_new1.xlsx"
 df.to_excel(output_path, index=False)
 
 print(f"✅ Combined dataset saved to: {output_path}")
+print(f"📊 Unique rallies processed: {df['rally_id'].nunique()}")

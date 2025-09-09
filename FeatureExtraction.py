@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Load data
-df = pd.read_excel("excel/time_series_shot_data_all_40.xlsx")
+df = pd.read_excel("excel/time_series_shot_data_all_new1.xlsx")
 
 # Separate by source
 hits = df[df["source"] == "hitting_position"].copy()
